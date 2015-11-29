@@ -51,103 +51,80 @@ ybeta_rast_to_dt <- function(ybetas, cropnames, base) {
 #'   nm_up(mask(r, m, maskvalue = 0), cropnames)
 #' })
 #' 
-#' input_handler(input_key = "ZA", ybetas = ybetas, input = "D", code = rc, 
-#'               ybeta_update = 1)
-#' input_handler(input_key = "ZA", ybetas = ybetas, input = "R", code = rc, 
+#' input_handler(input_key = "ZA", ybetas = ybetas, code = rc, 
 #'               ybeta_update = 1)
 #' il <- fetch_inputs(input_key = "ZA")  #' fetch all necessary inputs 
-#' input_handler(input_key = "ZA", ybetas = ybetas, input = "D", code = rc, 
+#' input_handler(input_key = "ZA", ybetas = ybetas, code = rc, 
 #'               ybeta_update = 0, exist_list = il)
-#' input_handler(input_key = "ZA", ybetas = ybetas, input = "D", code = rc, 
+#' input_handler(input_key = "ZA", ybetas = ybetas, code = rc, 
 #'               ybeta_update = 0, exist_list = il[-1])
-#' input_handler(input_key = "ZA", ybetas = ybetas, input = "D", code = rc, 
+#' input_handler(input_key = "ZA", ybetas = ybetas, code = rc, 
 #'               ybeta_update = 1, exist_list = il)
-#' input_handler(input_key = "ZA", ybetas = list(1, 1), input = "D", code = rc, 
-#'               ybeta_update = 1, exist_list = il)
-#' 
-#' il <- fetch_inputs(input_key = "ZA", input = "R") 
-#' input_handler(input_key = "ZA", ybetas = ybetas, input = "R", code = rc, 
-#'               ybeta_update = 0, exist_list = il)
-#' input_handler(input_key = "ZA", ybetas = ybetas, input = "R", code = rc, 
-#'               ybeta_update = 0, exist_list = il[-1])
-#' input_handler(input_key = "ZA", ybetas = ybetas, input = "R", code = rc, 
+#' input_handler(input_key = "ZA", ybetas = list(1, 1), code = rc, 
 #'               ybeta_update = 1, exist_list = il)
 #' @export
-input_handler <- function(input_key = "ZA", ybetas, input = "D", code, 
+input_handler <- function(input_key = "ZA", ybetas, code, 
                           ybeta_update, exist_list = NULL, silent = TRUE) {
-  lnms <- c("currprod", "pp_curr", "p_yield", "cropfrac", "carbon", "mask",
-            "cost", "richness", "pas", "cropnames")
+  # ybetas <- list(1, 1); code = run_code(input_key); ybeta_update <- 0
+  lnms <- c("currprod", "pp_curr", "p_yield", "carbon", "mask",
+            "cost", "richness", "pas", "cons", "cropnames")
   #ha <- res(il$currprod)[2]^2 / 10000
   if(!is.null(exist_list) & any(!lnms %in% names(exist_list))) {
     stop("Input list must have all variables", call. = FALSE) 
   }
   # no existing data list provided 
-  if(input == "D" & is.null(exist_list)) {  # il_y
+  if(is.null(exist_list)) {  # il_y
     il <- fetch_inputs(input_key = input_key)  # fetch all necessary inputs 
     ybetas <- ybeta_rast_to_dt(ybetas, cropnames = il$cropnames, base = il$mask)
     ybeta <- yield_mod_dt(inlist = il[c("p_yield", "pp_curr")], ybetas = ybetas, 
-                          code = code, cropnames = il$cropnames, silent = silent)
+                          code = code, cropnames = il$cropnames, 
+                          silent = silent)
     outlist <- il
     outlist$y_std <- ybeta$y_std
     outlist[c("p_yield", "pp_curr")] <- ybeta[c("p_yield", "pp_curr")]
   }
   # if existing list is provided but ybeta needs adjustment
-  if(input == "D" & !is.null(exist_list) & ybeta_update == 1) {
+  if(!is.null(exist_list) & ybeta_update == 1) {
     ybetas <- ybeta_rast_to_dt(ybetas, cropnames = il$cropnames, base = il$mask)
     ybeta <- yield_mod_dt(inlist = exist_list[c("p_yield", "pp_curr")], 
-                          ybetas = ybetas, code = code, cropnames = il$cropnames)
+                          ybetas = ybetas, code = code, 
+                          cropnames = il$cropnames)
     outlist <- exist_list
     outlist$y_std <- ybeta$y_std
     outlist[c("p_yield", "pp_curr")] <- ybeta[c("p_yield", "pp_curr")]
   }
-  if(input == "D" & !is.null(exist_list) & ybeta_update == 0) {
+  if(!is.null(exist_list) & ybeta_update == 0) {
     outlist <- exist_list
   }
-  if(input == "R" & is.null(exist_list)) {  # il_y
-    il <- fetch_inputs(input_key = input_key, input = "R") 
-    ybeta <- yield_mod_r(inlist = il[c("p_yield", "pp_curr")], ybetas = ybetas, 
-                         code = code, cropnames = il$cropnames, silent = silent)
-    outlist <- il
-    outlist$y_std <- ybeta$y_std
-    outlist[c("p_yield", "pp_curr")] <- ybeta[c("p_yield", "pp_curr")]
-  } 
-  if(input == "R" & !is.null(exist_list) & ybeta_update == 1) {
-    if(any(!lnms %in% names(exist_list))) {
-       stop("Input list must have all variables", call. = FALSE)
-    }
-    ybeta <- yield_mod_r(inlist = exist_list[c("p_yield", "pp_curr")], 
-                         ybetas = ybetas, code = code, cropnames = il$cropnames)
-    outlist <- exist_list
-    outlist$y_std <- ybeta$y_std
-    outlist[c("p_yield", "pp_curr")] <- ybeta[c("p_yield", "pp_curr")]
-  }
-  if(input == "R" & !is.null(exist_list) & ybeta_update == 0) {
-    outlist <- exist_list
-  }
-  
+
   # Calculate conversion probabilities so they are done by impact/production
-  yield <- outlist$p_yield
-  
-  carbonperyield <- 1/yield #for division
+  # for division
+  # carbonperyield <- copy(outlist$p_yield)[, c(outlist$cropnames) := 
+                                     # lapply(.SD, function(x) 1 / x), 
+                                     # .SDcols = outlist$cropnames]
+  carbonperyield <- 1 / outlist$p_yield
   carbon <- outlist$carbon$veg + outlist$carbon$soil * 0.25
-  for(j in outlist$cropnames) set(carbonperyield, i = NULL, j = j, carbonperyield[[j]] * 
-                               carbon)
-  outlist$carbon_p <- 1 - (carbonperyield - min(carbonperyield))/diff(range(carbonperyield))
+  for(j in outlist$cropnames) {
+    set(carbonperyield, i = NULL, j = j, carbonperyield[[j]] * carbon)
+  }
+  outlist$carbon_p <- 1 - (carbonperyield - min(carbonperyield, na.rm = TRUE)) / 
+   diff(range(carbonperyield, na.rm = TRUE))
   
-  bdperyield <- 1/yield
-  bd <- outlist$pas
-  bd[(is.na(bd))] <- 0
-  for(j in outlist$cropnames) set(bdperyield, i = NULL, j = j, bdperyield[[j]] * 
-                               bd)
-  outlist$cons_p <- 1 - (bdperyield - min(bdperyield))/diff(range(bdperyield))
+  bdperyield <- 1 / outlist$p_yield
+  for(j in outlist$cropnames) {
+   set(bdperyield, i = NULL, j = j, bdperyield[[j]] * 
+        outlist$cons[, grep("cons", names(outlist$cons)), with = FALSE])  
+  }
+  outlist$cons_p <- 1 - (bdperyield - min(bdperyield, na.rm = TRUE)) / 
+   diff(range(bdperyield, na.rm = TRUE))
   
-  costperyield <- 1/yield
-  cost <- outlist$cost
-  for(j in outlist$cropnames) set(costperyield, i = NULL, j = j, costperyield[[j]] * 
-                                    cost)
-  outlist$cost_p <- 1 - (costperyield - min(costperyield))/diff(range(costperyield))
-  
-  
+  costperyield <- 1 / outlist$p_yield
+  for(j in outlist$cropnames) {
+    set(costperyield, i = NULL, j = j, costperyield[[j]] * 
+         outlist$cost[, grep("cost", names(outlist$cost)), with = FALSE])
+  }
+  outlist$cost_p <- 1 - (costperyield - min(costperyield, na.rm = TRUE)) / 
+   diff(range(costperyield, na.rm = TRUE))
   return(outlist)
 }
 

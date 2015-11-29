@@ -3,7 +3,6 @@
 #' @param carbon data.table of veg and soil carbon stocks
 #' @param pot_yield data.table of potential crop yields (modified as needed)
 #' @param div_list list of diversity data.tables
-#' @param crop_frac data.table of cropland fractions
 #' @param cropnames Vector of crop names in analysis 
 #' @param ha Pixel area
 #' @details Calculates summary statistics of the impacts of cropland 
@@ -48,8 +47,8 @@
 #'                      ha = ha)
 
 #' @export
-impact_dt <- function(conv, carbon, pot_yield, div_list, cost, crop_frac, cropnames,
-                      ha) {
+impact_dt <- function(conv, carbon, pot_yield, div_list, cost, crop_frac, 
+                      cropnames, ha) {
    cn <- cropnames
    mymean <- function(x) mean(x[x > 0], na.rm = TRUE)
    mysum <- function(x) sum(x, na.rm = TRUE)

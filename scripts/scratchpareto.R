@@ -1,13 +1,13 @@
 library(agroEcoTradeoff)
-source("Rmod/tradeoff_mod2.R")
-source("Rmod/constraints_dt3.R")
-source("Rmod/convert_dt4.R")
-source("R/pareto.R")
-source("Rmod/targets2.R")
-source("Rmod/impact_dt2.R")
-source("Rmod/input_handler2.R")
-source("Rmod/fetch_inputs2.R")
-source("Rmod/yield_mod2.R")
+#source("Rmod/tradeoff_mod2.R")
+#source("Rmod/constraints_dt3.R")
+#source("Rmod/convert_dt4.R")
+#source("R/pareto.R")
+#source("Rmod/targets2.R")
+#source("Rmod/impact_dt2.R")
+#source("Rmod/input_handler2.R")
+#source("Rmod/fetch_inputs2.R")
+#source("Rmod/yield_mod2.R")
 
 # 2 Constraints
 # Yield modification
@@ -21,7 +21,7 @@ cnames <- c("Ag", "C")
 
 ot <- pareto(cnames = cnames, step = step, yblist = yblist, targ = targ)
 # Plot the Pareto front
-plot(ot$land, ot$carbon, xlab = "Total Area Converted (ha)", ylab = "Total Carbon Lost (t)")
+plot(ot$table$land, ot$table$carbon, xlab = "Total Area Converted (ha)", ylab = "Total Carbon Lost (t)")
 
 
 # 3 Constraints
@@ -30,7 +30,7 @@ yblist <- list(yb1 <- c(1, 1))
 # Target multiplier
 targ <- 3
 # Refine the step interval over which to search for optimal solutions
-step <- 0.25
+step <- 0.5
 # Pick the constraints to optimize over
 cnames <- c("Ag", "C", "bd")
 
@@ -79,24 +79,24 @@ ot <- pareto(cnames = cnames, step = step, yblist = yblist, targ = targ)
 par(mfcol = c(3,3))
 par(mar=c(4, 4, 2, 2) + 0.1)
 
-ot <- data.frame(ot)
+ot1 <- data.frame(ot$table)
 
-ot$colors <- rainbow(length(ot$ind))
-ot$ind <- seq(1, length(ot$ind))
+ot1$colors <- rainbow(length(ot$table$ind))
+ot1$ind <- seq(1, length(ot$table$ind))
 
-inds <- ot$ind
-cols <- ot$colors
-ot2 <- ot[order(ot$carbon),]
+inds <- ot1$ind
+cols <- ot1$colors
+ot2 <- ot1[order(ot1$carbon),]
 inds2 <- ot2$ind
 cols2 <- ot2$colors
-ot3 <- ot[order(ot$biodiversity),]
+ot3 <- ot1[order(ot1$biodiversity),]
 inds3 <- ot3$ind
 cols3 <- ot3$colors
 
 
-barplot(ot$land, names.arg = inds, ylab = "Area Converted (ha)", col = cols, main = "by Area")
-barplot(ot$carbon, names.arg = inds, ylab = "Carbon Loss (t)", col = cols)
-barplot(ot$biodiversity, names.arg = inds, ylab = "PA Loss (ha)", col = cols, xlab = "Scenario Number")
+barplot(ot1$land, names.arg = inds, ylab = "Area Converted (ha)", col = cols, main = "by Area")
+barplot(ot1$carbon, names.arg = inds, ylab = "Carbon Loss (t)", col = cols)
+barplot(ot1$biodiversity, names.arg = inds, ylab = "PA Loss (ha)", col = cols, xlab = "Scenario Number")
 
 barplot(ot2$land, names.arg = inds2, col = cols2, main = "by Carbon")
 barplot(ot2$carbon, names.arg = inds2, col = cols2)
@@ -105,4 +105,3 @@ barplot(ot2$biodiversity, names.arg = inds2, col = cols2, xlab = "Scenario Numbe
 barplot(ot3$land, names.arg = inds3, col = cols3, main = "by PA")
 barplot(ot3$carbon, names.arg = inds3, col = cols3)
 barplot(ot3$biodiversity, names.arg = inds3, col = cols3, xlab = "Scenario Number")
-
